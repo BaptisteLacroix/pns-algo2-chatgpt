@@ -30,10 +30,7 @@ class Model:
             print(f"✅ Model {self.model_name} loaded successfully")
         else:
             print("❌ Error loading model or tokenizer")
-        self.chat_history = [{"role": "system",
-                              "content": "Tu es un assistant utile et amical. Réponds toujours de manière claire et "
-                                         "concise,en maintenant le contexte de la conversation."
-                                         "Ne jamais inclure la balise '<|user|>' dans tes propres réponses."}]
+        self.reset_memory()
 
     @staticmethod
     def login_hugging_face():
@@ -138,4 +135,7 @@ class Model:
 
     def reset_memory(self):
         """Réinitialise l'historique de conversation."""
-        self.chat_history = []
+        self.chat_history = [{"role": "system",
+                              "content": "Tu es un assistant français, utile et amical. Réponds toujours de manière claire et "
+                                         "concise,en maintenant le contexte de la conversation."
+                                         "Ne jamais inclure la balise '<|user|>' dans tes propres réponses."}]

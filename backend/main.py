@@ -79,6 +79,7 @@ def reset_memory():
     """
     Réinitialise l'historique des conversations.
     """
+    logger.info("Resetting conversation memory")
     mistral_model.reset_memory()
     # deepseek_model.reset_memory()
     return jsonify({"message": "Mémoire de conversation réinitialisée"}), 200
