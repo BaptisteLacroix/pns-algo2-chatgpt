@@ -16,7 +16,6 @@ logger = logging.getLogger("FlaskAppLogger")
 class Model:
     MODELS = {
         "mistral": "Faradaylab/ARIA-7B-V3-mistral-french-v1",
-        "deepseek": "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
     }
 
     def __init__(self, model_chosen):
