@@ -8,6 +8,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
 from env import HF_TOKEN
 from env import CACHE_DIR
+from profiles import PROFILES
 
 logger = logging.getLogger("FlaskAppLogger")
 
@@ -20,6 +21,7 @@ class Model:
 
     def __init__(self, model_chosen):
         # Check if GPU is available
+        self.chat_history = None
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         print(f"📌 Using device: {self.device}")
         self.model_name = self.check_and_load_model_name(model_chosen)
@@ -130,12 +132,11 @@ class Model:
         for entry in self.chat_history:
             role_tag = "<|" + entry["role"] + "|>"
             formatted_prompt += f"{role_tag}\n{entry['content']}</s>\n"
-        formatted_prompt += "<|assistant|>\n"
+        formatted_prompt += "<|assistant|>\n" #TODO changer le nom assitant pour un meilleur role play
         return formatted_prompt
 
-    def reset_memory(self):
+    def reset_memory(self,profile_id='TNIA'):
         """Réinitialise l'historique de conversation."""
         self.chat_history = [{"role": "system",
-                              "content": "Tu es un assistant français, utile et amical. Réponds toujours de manière claire et "
-                                         "concise,en maintenant le contexte de la conversation."
-                                         "Ne jamais inclure la balise '<|user|>' dans tes propres réponses."}]
+                              "content": PROFILES[profile_id]}]
+        logger.info("Conversation memory reset with profile: %s", profile_id)

@@ -65,14 +65,17 @@ def openai_completions():
 
         if model == 'deepseek':
             logger.info("Using DeepSeek model")
-            return Response(chatgpt_response_stream(deepseek_model, prompt), content_type='text/plain;charset=utf-8', status=200)
+            return Response(chatgpt_response_stream(deepseek_model, prompt), content_type='text/plain;charset=utf-8',
+                            status=200)
 
         logger.info("Using Mistral model")
-        return Response(chatgpt_response_stream(mistral_model, prompt), content_type='text/plain;charset=utf-8', status=200)
+        return Response(chatgpt_response_stream(mistral_model, prompt), content_type='text/plain;charset=utf-8',
+                        status=200)
 
     except Exception as e:
         logger.error(f"Error in openai_completions: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
 
 @app.route('/reset-memory', methods=['POST'])
 def reset_memory():
@@ -80,7 +83,10 @@ def reset_memory():
     Réinitialise l'historique des conversations.
     """
     logger.info("Resetting conversation memory")
-    mistral_model.reset_memory()
+    data = request.json
+    logger.info("Received request data: %s", data)
+    profil = data.get('profil')
+    mistral_model.reset_memory(profil)
     # deepseek_model.reset_memory()
     return jsonify({"message": "Mémoire de conversation réinitialisée"}), 200
 
