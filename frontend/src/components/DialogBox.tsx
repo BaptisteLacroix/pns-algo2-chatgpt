@@ -120,9 +120,12 @@ export const DialogBox = ({
     useEffect(() => {
         const fetchCurrentProfile = async () => {
             try {
-                const profile = await ApiService.getCurrentProfile();
-                if (profile) {
-                    setCurrentProfile(profile);
+                if (!currentProfile && currentProfileId) {
+                    const profile = await ApiService.getCurrentProfile();
+                    if (profile) {
+                        console.log("Setting current profile from DialogBox:", profile.id);
+                        setCurrentProfile(profile);
+                    }
                 }
             } catch (err) {
                 console.error("Erreur lors du chargement du profil:", err);
@@ -130,7 +133,7 @@ export const DialogBox = ({
         };
 
         fetchCurrentProfile();
-    }, []);
+    }, [currentProfileId]);
 
     // 2. Charger une conversation existante si spécifiée dans l'URL
     useEffect(() => {

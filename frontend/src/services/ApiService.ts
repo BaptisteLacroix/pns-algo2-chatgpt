@@ -1,4 +1,9 @@
 // Types
+import { makeRequest } from './HttpService';
+import { CacheService, Profile, CurrentProfile } from './CacheService';
+
+export type { Profile, CurrentProfile };
+
 export type Message = {
     role: string;
     content: string;
@@ -16,29 +21,11 @@ export type Conversation = {
     };
 };
 
-export type Profile = {
-    id: string;
-    name: string;
-    description: string;
-};
-
-export type CurrentProfile = {
-    id: string;
-    name: string;
-};
-
-// Constantes
-const API_BASE_URL = "http://127.0.0.1:5000";
-
 // Services d'API
 export const ApiService = {
     // Conversations
     getConversations: async (): Promise<Conversation[]> => {
-        const response = await fetch(`${API_BASE_URL}/conversations`);
-        if (!response.ok) {
-            throw new Error(`Erreur lors de la récupération des conversations: ${response.status}`);
-        }
-        const data = await response.json();
+        const data = await makeRequest<{conversations: any[]}>("/conversations");
         
         // Formater les dates
         return data.conversations.map((conv: any) => ({
@@ -52,28 +39,24 @@ export const ApiService = {
     },
 
     getConversation: async (id: string): Promise<Conversation> => {
-        const response = await fetch(`${API_BASE_URL}/conversations/${id}`);
-        if (!response.ok) {
-            throw new Error(`Impossible de charger cette conversation: ${response.status}`);
-        }
-        return await response.json();
+        return makeRequest<Conversation>(
+            `/conversations/${id}`, 
+            {}, 
+            "Impossible de charger cette conversation"
+        );
     },
 
     deleteConversation: async (id: string): Promise<void> => {
-        const response = await fetch(`${API_BASE_URL}/conversations/${id}`, {
-            method: "DELETE"
-        });
-        if (!response.ok) {
-            throw new Error(`Erreur lors de la suppression: ${response.status}`);
-        }
+        await makeRequest(
+            `/conversations/${id}`, 
+            { method: "DELETE" }, 
+            "Erreur lors de la suppression"
+        );
     },
 
     // Réponses et messages
     sendMessage: async (prompt: string, model: string = "mistral", conversationId?: string, profileId?: string) => {
-        const requestBody: Record<string, any> = {
-            prompt,
-            model
-        };
+        const requestBody: Record<string, any> = { prompt, model };
         
         if (conversationId) {
             requestBody.conversation_id = conversationId;
@@ -83,49 +66,42 @@ export const ApiService = {
             requestBody.profile_id = profileId;
         }
         
-        const response = await fetch(`${API_BASE_URL}/responses`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(requestBody),
-        });
-        
-        if (!response.ok) {
-            throw new Error(`Erreur lors de l'envoi du message: ${response.status}`);
-        }
-        
-        return response;
+        return makeRequest<Response>(
+            "/responses", 
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(requestBody),
+            },
+            "Erreur lors de l'envoi du message"
+        );
     },
 
-    // Profils
+    // Profils - utilise maintenant le CacheService
     getAllProfiles: async (): Promise<Record<string, Profile>> => {
-        const response = await fetch(`${API_BASE_URL}/profiles`);
-        if (!response.ok) {
-            throw new Error(`Erreur lors du chargement des profils: ${response.status}`);
-        }
-        const data = await response.json();
-        return data.profiles;
+        return CacheService.getProfiles();
     },
 
     getCurrentProfile: async (): Promise<CurrentProfile | null> => {
-        const response = await fetch(`${API_BASE_URL}/profiles/current`);
-        if (!response.ok) {
-            return null;
-        }
-        return await response.json();
+        return CacheService.getCurrentProfile();
     },
 
     changeProfile: async (profileId: string): Promise<{ profile: CurrentProfile, conversation_id?: string }> => {
-        const response = await fetch(`${API_BASE_URL}/profiles/change`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ profile_id: profileId }),
-        });
+        const data = await makeRequest<{ profile: CurrentProfile, conversation_id?: string }>(
+            "/profiles/change", 
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ profile_id: profileId }),
+            },
+            "Erreur lors du changement de profil"
+        );
         
-        if (!response.ok) {
-            throw new Error(`Erreur lors du changement de profil: ${response.status}`);
+        if (data.profile) {
+            CacheService.updateCurrentProfile(data.profile);
         }
         
-        return await response.json();
+        return data;
     },
 
     // Gestion de la mémoire/conversation
@@ -135,16 +111,22 @@ export const ApiService = {
             requestBody.profile_id = profileId;
         }
         
-        const response = await fetch(`${API_BASE_URL}/reset-memory`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(requestBody),
-        });
+        const data = await makeRequest<{ conversation_id: string, profile?: CurrentProfile }>(
+            "/reset-memory", 
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(requestBody),
+            },
+            "Erreur lors de la réinitialisation"
+        );
         
-        if (!response.ok) {
-            throw new Error(`Erreur lors de la réinitialisation: ${response.status}`);
+        if (data.profile) {
+            CacheService.updateCurrentProfile(data.profile);
         }
         
-        return await response.json();
+        CacheService.clearCache();
+        
+        return data;
     }
 };

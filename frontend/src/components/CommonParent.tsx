@@ -31,9 +31,12 @@ export const CommonParent = () => {
     useEffect(() => {
         const fetchCurrentProfile = async () => {
             try {
-                const profile = await ApiService.getCurrentProfile();
-                if (profile) {
-                    setCurrentProfileId(profile.id);
+                if (currentProfileId === null) {
+                    const profile = await ApiService.getCurrentProfile();
+                    if (profile) {
+                        console.log("Setting current profile from CommonParent:", profile.id);
+                        setCurrentProfileId(profile.id);
+                    }
                 }
             } catch (error) {
                 console.error("Erreur lors du chargement du profil initial:", error);

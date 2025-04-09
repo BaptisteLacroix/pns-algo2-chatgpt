@@ -46,30 +46,43 @@ export const SidePanelRight: React.FC<SidePanelRightProps> = ({
 
   // Chargement des profils disponibles
   useEffect(() => {
+    let isMounted = true;
     const fetchProfiles = async () => {
       try {
-        setIsLoading(true);
+        if (Object.keys(profiles).length === 0) {
+          setIsLoading(true);
 
-        // Récupérer tous les profils
-        const profilesData = await ApiService.getAllProfiles();
-        setProfiles(profilesData);
+          // Récupérer tous les profils
+          const profilesData = await ApiService.getAllProfiles();
+          if (isMounted) {
+            setProfiles(profilesData);
 
-        // Charger également le profil actuel
-        const currentProfileData = await ApiService.getCurrentProfile();
-        if (currentProfileData) {
-          setCurrentProfile(currentProfileData);
+            // Charger également le profil actuel
+            const currentProfileData = await ApiService.getCurrentProfile();
+            if (currentProfileData && isMounted) {
+              setCurrentProfile(currentProfileData);
+            }
+
+            setError(null);
+          }
         }
-
-        setError(null);
       } catch (err) {
         console.error("Erreur:", err);
-        setError("Impossible de charger les profils");
+        if (isMounted) {
+          setError("Impossible de charger les profils");
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchProfiles();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleProfileChange = async (profileId: string) => {
